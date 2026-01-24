@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Portal | Student Performance Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card .label { color: var(--text-dim); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-card .value { font-size: 2rem; font-weight: 700; color: #fff; }
+
+        /* Main Content */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover { background: var(--primary-hover); transform: scale(1.05); }
+        .btn-secondary { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .btn-danger:hover { background: #ef4444; color: white; }
+
+        /* Table */
+        .table-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            font-size: 0.95rem;
+        }
+
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-pred { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-actual { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active { display: flex; opacity: 1; }
+
+        .modal {
+            background: #1e293b;
+            border: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            border-radius: 2rem;
+            width: 100%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal { transform: scale(1); }
+
+        .modal h2 { margin-bottom: 1.5rem; font-size: 1.5rem; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem; }
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            color: white;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus { border-color: var(--primary); }
+
+        .modal-actions { display: flex; gap: 1rem; margin-top: 2rem; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-grid, .content-header, .table-container {
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Actions */
+        .action-btns { display: flex; gap: 0.5rem; }
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+        }
+        .action-btn:hover { color: white; transform: scale(1.1); }
+        .action-edit:hover { background: rgba(99, 102, 241, 0.3); color: #818cf8; }
+        .action-delete:hover { background: rgba(239, 68, 68, 0.3); color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                TeachPredict AI
+            </div>
+            <div class="user-info">
+                <span style="color: var(--text-dim)">Admin Portal</span>
+            </div>
+        </nav>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Total Students</span>
+                <span class="value" id="count-total">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Average Performance</span>
+                <span class="value" id="avg-perf">0%</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Accuracy Rate Index</span>
+                <span class="value">98.8%</span>
+            </div>
+        </div>
+
+        <div class="content-header">
+            <h2>Student Roster</h2>
+            <button class="btn" onclick="openModal()">
+                <i class="fas fa-plus"></i> Add New Student
+            </button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Study Hours</th>
+                        <th>Prev Score</th>
+                        <th>Sleep</th>
+                        <th>Papers</th>
+                        <th>Actual Score</th>
+                        <th>Predicted Index</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="student-table-body">
+                    <!-- Rows will be injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for Adding/Editing -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">Add New Student</h2>
+            <form id="student-form">
+                <input type="hidden" id="student-id">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="name" class="form-control" placeholder="John Doe" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Hours Studied</label>
+                        <input type="number" id="hours" class="form-control" min="1" max="12" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Previous Score</label>
+                        <input type="number" id="prev_score" class="form-control" min="0" max="100" required>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Sleep Hours</label>
+                        <input type="number" id="sleep" class="form-control" min="1" max="12" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Papers Practiced</label>
+                        <input type="number" id="papers" class="form-control" min="0" max="20" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Actual Performance Index (Final Exam)</label>
+                    <input type="number" id="actual" class="form-control" min="0" max="100" value="0">
+                    <small style="color: var(--text-dim); font-size: 0.75rem;">Leave at 0 if unknown</small>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                    <input type="checkbox" id="extra" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label style="margin-bottom: 0; cursor: pointer;" for="extra">Extracurricular Activities</label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn">
+                        <span id="submit-btn-text">Save Student</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/students/';
+        let students = [];
+
+        async function fetchStudents() {
+            try {
+                const response = await fetch(API_URL);
+                students = await response.json();
+                renderTable();
+                updateStats();
+            } catch (error) {
+                console.error('Error fetching students:', error);
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('student-table-body');
+            tbody.innerHTML = '';
+
+            students.forEach(s => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600;">${s.student_name}</td>
+                    <td>${s.hours_studied} hrs</td>
+                    <td>${s.previous_scores}%</td>
+                    <td>${s.sleep_hours} hrs</td>
+                    <td>${s.sample_papers}</td>
+                    <td><span class="badge badge-actual">${s.performance_index}%</span></td>
+                    <td><span class="badge badge-pred">${s.predicted_index}%</span></td>
+                    <td class="action-btns">
+                        <div class="action-btn action-edit" onclick="editStudent(${s.id})"><i class="fas fa-edit"></i></div>
+                        <div class="action-btn action-delete" onclick="deleteStudent(${s.id})"><i class="fas fa-trash"></i></div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('count-total').innerText = students.length;
+            const avg = students.length > 0
+                ? (students.reduce((acc, curr) => acc + curr.performance_index, 0) / students.length).toFixed(1)
+                : 0;
+            document.getElementById('avg-perf').innerText = avg + '%';
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn-text');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="loading-spinner"></span> Saving...';
+
+            const id = document.getElementById('student-id').value;
+            const data = {
+                student_name: document.getElementById('name').value,
+                hours_studied: parseInt(document.getElementById('hours').value),
+                previous_scores: parseInt(document.getElementById('prev_score').value),
+                sleep_hours: parseInt(document.getElementById('sleep').value),
+                sample_papers: parseInt(document.getElementById('papers').value),
+                performance_index: parseFloat(document.getElementById('actual').value),
+                extracurricular: document.getElementById('extra').checked
+            };
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_URL}${id}/` : API_URL;
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    fetchStudents();
+                } else {
+                    const error = await response.json();
+                    alert('Error saving student: ' + JSON.stringify(error));
+                }
+            } catch (error) {
+                console.error('Error saving student:', error);
+            } finally {
+                btn.innerText = originalText;
+            }
+        }
+
+        async function deleteStudent(id) {
+            if (confirm('Are you sure you want to remove this student?')) {
+                try {
+                    const response = await fetch(`${API_URL}${id}/`, { method: 'DELETE' });
+                    if (response.ok) fetchStudents();
+                } catch (error) {
+                    console.error('Error deleting student:', error);
+                }
+            }
+        }
+
+        function editStudent(id) {
+            const s = students.find(x => x.id === id);
+            if (!s) return;
+
+            document.getElementById('modal-title').innerText = 'Edit Student Details';
+            document.getElementById('student-id').value = s.id;
+            document.getElementById('name').value = s.student_name;
+            document.getElementById('hours').value = s.hours_studied;
+            document.getElementById('prev_score').value = s.previous_scores;
+            document.getElementById('sleep').value = s.sleep_hours;
+            document.getElementById('papers').value = s.sample_papers;
+            document.getElementById('actual').value = s.performance_index;
+            document.getElementById('extra').checked = s.extracurricular;
+
+            openModal();
+        }
+
+        function openModal() {
+            document.getElementById('modal-overlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+            document.getElementById('student-form').reset();
+            document.getElementById('student-id').value = '';
+            document.getElementById('modal-title').innerText = 'Add New Student';
+        }
+
+        document.getElementById('student-form').addEventListener('submit', handleSubmit);
+
+        // Initial fetch
+        fetchStudents();
+    </script>
+</body>
+</html>
